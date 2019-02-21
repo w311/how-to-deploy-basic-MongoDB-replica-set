@@ -175,8 +175,11 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
     use admin
     db.createUser({user: 'admin', pwd: 'admin', roles: ['root']})
+    
+    
+## Option #1 Authentication by key file     
 
-## Step10 Add internal authentication by key file by editing mongod.conf in each node:
+### Step1 Add internal authentication by key file by editing mongod.conf in each node:
 
   
     storage:
@@ -196,27 +199,110 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
     replication:
     replSetName: rs0
   
-## Step11 Create key file in each node:
+### Step2 Create key file in each node:
 
     openssl rand -base64 741 > rs0-keyfile
     chmod 400 rs0-keyfile
     scp rs0-keyfile root@defaced2:/home/mongodb/conf/
     scp rs0-keyfile root@defaced3:/home/mongodb/conf/
 
-## Step12 Log onto mongoDB cluser:
+### Step3 Log onto mongoDB cluser:
 
     mongo admin -u "admin" -p "admin"
 
-## Step13 Stop mongod in each node(start from secondary node):
+### Step4 Stop mongod in each node(start from secondary node):
 
     db.shutdownServer()
 
-## Step14 Restart mongod in each node:
+### Step5 Restart mongod in each node:
 
     mongod -f mongod.conf
 
-## Step15 Create additional users in mongo shell.
+### Step6 Create additional users in mongo shell.
 
     db.createUser({user: "userAdmin", pwd: "badges", roles: [{ role:"userAdminAnyDatabase", db: "admin" }]})
     db.createUser({user: "reader", pwd: "books", roles: [{ role:"read", db: "acme" }]})
+
+
+## Option #2 Authentication by X.509 certificate
+
+### Step1 Change the mongod.conf to following content:
+
+    storage:
+      dbPath: /home/mongodb/data
+    net:
+      bindIp: 172.16.155.5,localhost
+      port: 27017
+      ssl:
+          mode: requireSSL
+          PEMKeyFile: /home/mongodb/ssl/defaced1.pem
+          CAFile: /home/mongodb/ssl/mongoCA.crt
+    systemLog:
+      destination: file
+      path: /home/mongodb/log/mongod.log
+      logAppend: true
+    security:
+      authorization: enabled
+      clusterAuthMode: x509
+    processManagement:
+      fork: true
+    replication:
+      replSetName: rs0
+
+### Step2 Generate CA key and certificates.
+
+    openssl genrsa -out mongoCA.key -aes256 8192
+    openssl req -x509 -new -extensions v3_ca -key mongoCA.key -days 365 -out mongoCA.crt
+    
+### Step3 Generate server certificates by running following shell (provide hostname).
+
+    #!/bin/bash
+    if [ "$1" = "" ]; then
+    echo 'Please enter your hostname (CN):'
+    exit 1
+    fi
+    HOST_NAME="$1"
+    SUBJECT="/C=us/ST=tn/L=cha/O=bcbst/OU=it/CN=$HOST_NAME"
+    openssl req -new -nodes -newkey rsa:4096 -subj "$SUBJECT" -keyout $HOST_NAME.key -out $HOST_NAME.csr
+    openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in $HOST_NAME.csr -out $HOST_NAME.crt
+    rm $HOST_NAME.csr
+    cat $HOST_NAME.key $HOST_NAME.crt > $HOST_NAME.pem
+    rm $HOST_NAME.key
+    rm $HOST_NAME.crt
+
+
+### Step4 Copy all the pem files and CA file to related node.
+
+    First node:
+    
+    mkdir ssl
+    mv conf/defaced1.pem ssl
+    cp conf/mongoCA.crt ssl
+    chmod 700 ssl
+    
+    Copy files to second node:
+    
+    scp conf/defaced2.pem root@defaced2:/home/mongodb/conf/
+    scp conf/mongoCA.crt ssl root@defaced2:/home/mongodb/conf/
+    
+    Then do same as first node:
+    
+    mkdir ssl
+    mv conf/defaced1.pem ssl
+    cp conf/mongoCA.crt ssl
+    chmod 700 ssl   
+    
+### Step5 Stop mongod in each node(start from secondary node):
+   
+    mongo admin -u "admin" -p "admin"
+    db.shutdownServer()
+
+### Step6 Start mondod in each node:
+
+    mongod -f mongod.conf
+    
+### Step7 Logon to the new replica set by mongo shell:
+
+    mongo admin --host defaced1 -u 'admin' -p "admin" --ssl --sslPEMKeyFile ../ssl/defaced1.pem --sslCAFile ../ssl/mongoCA.crt
+
 
