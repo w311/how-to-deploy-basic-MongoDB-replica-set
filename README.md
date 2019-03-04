@@ -308,7 +308,7 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
 ## LDAP integration with AD servers with native LDAP in MongoDB
 
-  Here is the exxample configuration on how to enable LDAP anthentication with Aactive Directory servers.
+  Here is the example configuration on how to enable LDAP anthentication with Aactive Directory servers.
   
     storage:
       dbPath: /mongo_data
@@ -318,7 +318,7 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
       ssl:
           mode: requireSSL
           PEMKeyFile: /mongo_install/ssl/xx.pem
-          CAFile: /mongo_install/ssl/xx.pem
+          CAFile: /mongo_install/ssl/xx.ca.pem
     systemLog:
       destination: file
       path: /mongo_install/log/mongod.log
@@ -341,4 +341,8 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
     replication:
       replSetName: xx
 ~
-~
+You can user following example to login to the mongodb cluster:
+
+     mongo --host xx -u 'xx' -p  --authenticationMechanism PLAIN --authenticationDatabase '$external' --ssl --sslPEMKeyFile /mongo_install/ssl/xx.pem --sslCAFile /mongo_install/ssl/xx.ca.pem
+
+
