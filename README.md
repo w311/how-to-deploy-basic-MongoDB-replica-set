@@ -306,3 +306,39 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
     mongo admin --host defaced1 -u 'admin' -p "admin" --ssl --sslPEMKeyFile ../ssl/defaced1.pem --sslCAFile ../ssl/mongoCA.crt
 
 
+## LDAP integration with AD servers with native LDAP in MongoDB
+
+  Here is the exxample configuration on how to enable LDAP anthentication with Aactive Directory servers.
+  
+     storage:
+  dbPath: /mongo_data
+net:
+  bindIp: 10.32.20.148,localhost
+  port: 27017
+  ssl:
+      mode: requireSSL
+      PEMKeyFile: /mongo_install/ssl/rn001148.bcbst.com.mongo.pem
+      CAFile: /mongo_install/ssl/bcbst.com.ca.pem
+systemLog:
+  destination: file
+  path: /mongo_install/log/mongod.log
+  logAppend: true
+security:
+  authorization: enabled
+  clusterAuthMode: x509
+  ldap:
+    servers: "ldap.bcbst.com"
+    userToDNMapping: '[{match: "(.+)",ldapQuery: "dc=bcbst,dc=com??sub?(sAMAccountName={0})"}]'
+    authz:
+      queryTemplate: "OU=BCBST Users,DC=bcbst,DC=com??sub?(&(objectClass=group)(member={USER}))"
+    bind:
+      queryUser: "q16813w@bcbst.com"
+      queryPassword: "bcbstwqj.2019"
+setParameter:
+    authenticationMechanisms: 'PLAIN'
+processManagement:
+  fork: true
+replication:
+  replSetName: rs_bcbst_dvlp
+~
+~
