@@ -9,46 +9,53 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
     gpgcheck=1
     enabled=1
     gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
+    
+## Step2 Add following 3 lines to /etc/yum.conf and create certificate files for each nodes:    
+   
+    proxy=http://webproxy.xx.com:80
+    proxy_usernamexx
+    proxy_password=xx
 
-## Step2 Install MongoDB server.
 
-    yum install -y mongodb-enterprise
+## Step3 Install MongoDB server.
 
-## Step3 Create mongodb.conf in each node.
+    sudo yum install -y mongodb-enterprise
+    
+## Step4 Create mongodb folders in each node.
+
+    mkdir -p /mongo_install/log /mongo_install/conf /mongo_install/ssl
+
+## Step5 Create mongodb-noau.conf under /mongo_install/conf/ in each node with no authentication enabled.
 
 
     storage:
-      dbPath: /home/mongodb/data
+      dbPath: /mongo_data
     net:
-      bindIp: 172.16.155.5,localhost
+      bindIp: 10.xx.xx.xx,localhost
       port: 27017
     systemLog:
       destination: file
-      path: /home/mongodb/log/mongod.log
+      path: /mongo_install/log/mongod.log
       logAppend: true
     processManagement:
       fork: true
     replication:
-      replSetName: rs0
+      replSetName: xx
 
 
-## Step4 Create mongodb folders in each node.
+## Step6 Start mongod in each node.
 
-    mkdir -p /home/mongodb/log /home/mongodb/data /home/mongodb/conf
+    sudo -u mongod mongod -f /mongo_install/conf/mongod.conf
 
-## Step5 Start mongod in each node.
-
-    mongod -f mongod.conf
-
-## Step6 Start mongo shell.
+## Step7 Start mongo shell.
 
     mongo
 
-## Step7 Create replica set on mongo shell:
+## Step8 Create replica set on mongo shell:
 
     rs.initiate()
-    rs.add("172.16.178.169:27017")
-    rs.add("172.16.180.205:27017")
+    rs.add(""xx1.xx.com:27017")
+    rs.add(""xx2.xx.com:27017")
 
 ## step8 Check replica set status by:
 
@@ -226,20 +233,20 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
 ## Option #2 Authentication by X.509 certificate
 
-### Step1 Change the mongod.conf to following content:
+### Step1 Change the mongod-x509.conf to following content:
 
     storage:
-      dbPath: /home/mongodb/data
+      dbPath: /mongo_data
     net:
-      bindIp: 172.16.155.5,localhost
+      bindIp: 10.xx.xx.xx,localhost
       port: 27017
       ssl:
-          mode: requireSSL
-          PEMKeyFile: /home/mongodb/ssl/defaced1.pem
-          CAFile: /home/mongodb/ssl/mongoCA.crt
+      mode: requireSSL
+      PEMKeyFile: /mongo_install/ssl/xx.xx.com.mongo.pem
+      CAFile: /mongo_install/ssl/xx.com.ca.pem
     systemLog:
       destination: file
-      path: /home/mongodb/log/mongod.log
+      path: /mongo_install/log/mongod.log
       logAppend: true
     security:
       authorization: enabled
@@ -247,7 +254,8 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
     processManagement:
       fork: true
     replication:
-      replSetName: rs0
+      replSetName: xx
+
 
 ### Step2 Generate CA key and certificates.
 
@@ -299,7 +307,7 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
 ### Step6 Start mondod in each node:
 
-    mongod -f mongod.conf
+    sudo -u mongod mongod -f /mongo_install/conf/mongod-x509.conf
     
 ### Step7 Logon to the new replica set by mongo shell:
 
@@ -307,6 +315,10 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
 
 ## LDAP integration with AD servers with native LDAP in MongoDB
+
+### Step1  Create mongod-x509-ldap.conf 
+
+we need to create roles before enable LDAP mongod process
 
   Here is the example configuration on how to enable LDAP anthentication with Aactive Directory servers.
   
@@ -341,8 +353,23 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
     replication:
       replSetName: xx
 ~
-You can user following example to login to the mongodb cluster:
+### Step2 Create admin roles linked to AD group before enable LDAP mongod process.
+
+
+    db.createRole({role: "<AD group DN>", privileges: [], roles: [{ role: "userAdminAnyDatabase", db: "admin" },{ role: "clusterAdmin", db: "admin" }]})
+
+
+### Step3 Shutdown the existing mongod process and start new mongod with mongod-x509-ldap.conf.
+
+     sudo -u mongod mongod -f mongod-x509-ldap.conf
+
+### Step3 You can use following example to login to the mongodb cluster:
 
      mongo --host xx -u 'xx' -p  --authenticationMechanism PLAIN --authenticationDatabase '$external' --ssl --sslPEMKeyFile /mongo_install/ssl/xx.pem --sslCAFile /mongo_install/ssl/xx.ca.pem
+     
+### Step4 Create other required roles from application database, like this:
+
+     db.createRole({role: "<AD group DN>", privileges: [],  roles: [{ role: "readWrite", db: "<application database name>"}]})
+
 
 
