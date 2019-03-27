@@ -363,11 +363,11 @@ we need to create roles before enable LDAP mongod process
 
      sudo -u mongod mongod -f mongod-x509-ldap.conf
 
-### Step3 You can use following example to login to the mongodb cluster:
+### Step4 You can use following example to login to the mongodb cluster:
 
      mongo --host xx -u 'xx' -p  --authenticationMechanism PLAIN --authenticationDatabase '$external' --ssl --sslPEMKeyFile /mongo_install/ssl/xx.pem --sslCAFile /mongo_install/ssl/xx.ca.pem
      
-### Step4 Create other required roles from application database, like this:
+### Step5 Create other required roles from application database, like this:
 
      db.createRole({role: "<AD group DN>", privileges: [],  roles: [{ role: "readWrite", db: "<application database name>"}]})
 
