@@ -372,4 +372,5 @@ we need to create roles before enable LDAP mongod process
      db.createRole({role: "<AD group DN>", privileges: [],  roles: [{ role: "readWrite", db: "<application database name>"}]})
 
 
-
+ mongodump --host rn001147.bcbst.com -u 'q16813w' -p "bcbstwqj.2019" --authenticationMechanism PLAIN --authenticationDatabase '$external' --ssl --sslPEMKeyFile /mongo_install/ssl/rn001147.bcbst.com.mongo.pem --sslCAFile /mongo_install/ssl/bcbst.com.ca.pem -d test -c test -o /tmp/mongodumptest/
+ mongorestore --host rn001147.bcbst.com -u 'q16813w' -p "bcbstwqj.2019" --authenticationMechanism PLAIN --authenticationDatabase '$external' --ssl --sslPEMKeyFile /mongo_install/ssl/rn001147.bcbst.com.mongo.pem --sslCAFile /mongo_install/ssl/bcbst.com.ca.pem -d test -c test2 /tmp/mongodumptest/test/test.bson
