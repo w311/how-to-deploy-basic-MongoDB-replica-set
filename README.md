@@ -53,9 +53,32 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
 ## Step8 Create replica set on mongo shell:
 
+    Method1:
+    
     rs.initiate()
-    rs.add(""xx1.xx.com:27017")
     rs.add(""xx2.xx.com:27017")
+    
+    Then changed the Ip address of member1 to hostname by:
+    
+    cfg = rs.conf()
+    cfg.members[0].host = "xx1.xx.com:27017"
+    rs.reconfig(cfg)
+
+    
+    
+    Method2:
+    
+    rs.initiate(
+    {
+      _id: "myReplSetName",
+      version: 1,
+      members: [
+         { _id: 0, host : "xx1.xx.com:27017" },
+         { _id: 1, host : "xx2.xx.com:27017" },
+      ]
+    }
+    )
+    
 
 ## step8 Check replica set status by:
 
