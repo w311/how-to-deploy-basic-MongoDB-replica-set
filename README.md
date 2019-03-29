@@ -21,10 +21,12 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
     sudo yum install -y mongodb-enterprise
     
-## Step4 Create mongodb folders in each node.
+## Step4 Create mongodb folders in each node and grant the permission to mongod.
 
     mkdir -p /mongo_install/log /mongo_install/conf /mongo_install/ssl
-
+    Chown -R mongod:mongod /mongo_install/
+    Chown -R mongod:mongod /mongo_data/
+    
 ## Step5 Create mongod-noau.conf under /mongo_install/conf/ in each node with no authentication enabled.
 
 
@@ -326,6 +328,7 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 ### Step5 Stop mongod in each node(start from secondary node):
    
     mongo admin -u "admin" -p "admin"
+    use admin
     db.shutdownServer()
 
 ### Step6 Start mondod in each node:
