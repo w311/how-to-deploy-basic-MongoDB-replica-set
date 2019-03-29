@@ -25,7 +25,7 @@ This is a documentation on how to deploy basic MongoDB replica set on a 3-node c
 
     mkdir -p /mongo_install/log /mongo_install/conf /mongo_install/ssl
 
-## Step5 Create mongodb-noau.conf under /mongo_install/conf/ in each node with no authentication enabled.
+## Step5 Create mongod-noau.conf under /mongo_install/conf/ in each node with no authentication enabled.
 
 
     storage:
