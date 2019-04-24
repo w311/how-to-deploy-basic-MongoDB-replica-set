@@ -399,7 +399,7 @@ we need to create roles before enable LDAP mongod process
 
 
  
-## Add kerberos authentication
+## Add kerberos authentication (refer to: https://hackernoon.com/mongodb-kerberos-a3dfdf322d1c)
 
 ### Step1 Install the Kerberos client
 
@@ -455,29 +455,32 @@ we need to create roles before enable LDAP mongod process
          #       "user": "bob@MDBKRB5.NET",
          #       "db": "$external"
          #     }
-	 #   ],
-	 #   "authenticatedUserRoles": [
-	 #     {
-	 #       "role": "readWrite",
-	 #       "db": "social"
-	 #     }
-	 #   ]
-	 # }
+         #   ],
+         #   "authenticatedUserRoles": [
+         #     {
+         #       "role": "readWrite",
+         #       "db": "social"
+         #     }
+         #   ]
+         # }
 
      # Test the write privilege on social database
+     
       db.people.insert({fname: 'Shyam', lname: 'Arjarapu'})
+      
      # WriteResult({ "nInserted" : 1 })
 
      # Test the read privilege on social database
+     
       db.people.findOne()
         # {
-	# 	"_id" : ObjectId("5bb647a8315c61d11c361945"),
-	# 	"fname" : "Shyam",
-	# 	"lname" : "Arjarapu"
-	# }
+        # 	"_id" : ObjectId("5bb647a8315c61d11c361945"),
+        # 	"fname" : "Shyam",
+        # 	"lname" : "Arjarapu"
+        # }
 
         # Note that bob has no previleges on admin database
-	use admin
-	# switched to db admin
-	show collections
-	# Warning: unable to run listCollections, attempting to approximate collection names by parsing connectionStatus
+         use admin
+        # switched to db admin
+         show collections
+        # Warning: unable to run listCollections, attempting to approximate collection names by parsing connectionStatus
