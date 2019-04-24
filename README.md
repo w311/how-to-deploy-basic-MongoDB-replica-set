@@ -399,3 +399,85 @@ we need to create roles before enable LDAP mongod process
 
 
  
+## Add kerberos authentication
+
+### Step1 Install the Kerberos client
+
+     1 sudo yum install -y krb5-workstation
+     2 Copy the /etc/krb5.conf file contents from Kerberos Server's config file to MongoDB server
+     
+### Step2 Edit MongoDB configuraiton file
+
+     Add "GSSAPI" to authenticationMechanisms in mongod.conf
+     
+### Step3 Create a keytab file to store Kerberos service principals and encrypted keys
+
+     sudo ktutil
+     # ktutil:  
+     # Run the below commands at ktutil prompt
+
+     addent -password -p mongodb/mdb01.mdbkrb5.net -k 2 -e aes256-cts
+     # Password for mongodb/mdb01.mdbkrb5.net@MDBKRB5.NET:
+
+     write_kt /var/lib/mongo/private/mon01.keytab
+     
+###  Step4 Set the folders permissions to only allow the user mongod to read them
+
+      sudo chown -R mongod:mongod /var/lib/mongo/private
+   
+###  Step5 Set the keytab file location in environment variable
+
+      echo "KRB5_KTNAME=/var/lib/mongo/private/mon01.keytab" | sudo tee /etc/sysconfig/mongod
+      
+###  Step6 Create permission for principals in the kerberos server
+
+      db.createUser({user: 'alex@MDBKRB5.NET', roles: [{ role: 'root', db: 'admin'}]});
+      db.createUser({user: 'bob@MDBKRB5.NET', roles: [{ role: 'readWrite', db: 'social'}]});
+      
+###  Step7 Login to the Kerberos as bob and then log in to the MongoDB Server to test the readWrite permissions on the social database     
+
+      # Login into the Kerberos as bob
+       kinit -p bob
+       # Password for bob@MDBKRB5.NET:
+
+        klist
+
+        mongo social --quiet --host mdb01.mdbkrb5.net --authenticationMechanism=GSSAPI --authenticationDatabase='$external' --username bob@MDBKRB5.NET
+
+        # MongoDB Enterprise rs0:PRIMARY>
+        # Run the below commands at rs0:PRIMARY prompt
+
+         db.runCommand({connectionStatus: 1}).authInfo
+	 
+         # {
+         #   "authenticatedUsers": [
+         #     {
+         #       "user": "bob@MDBKRB5.NET",
+         #       "db": "$external"
+         #     }
+	 #   ],
+	 #   "authenticatedUserRoles": [
+	 #     {
+	 #       "role": "readWrite",
+	 #       "db": "social"
+	 #     }
+	 #   ]
+	 # }
+
+     # Test the write privilege on social database
+      db.people.insert({fname: 'Shyam', lname: 'Arjarapu'})
+     # WriteResult({ "nInserted" : 1 })
+
+     # Test the read privilege on social database
+      db.people.findOne()
+        # {
+	# 	"_id" : ObjectId("5bb647a8315c61d11c361945"),
+	# 	"fname" : "Shyam",
+	# 	"lname" : "Arjarapu"
+	# }
+
+        # Note that bob has no previleges on admin database
+	use admin
+	# switched to db admin
+	show collections
+	# Warning: unable to run listCollections, attempting to approximate collection names by parsing connectionStatus
